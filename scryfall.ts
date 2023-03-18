@@ -1,16 +1,14 @@
 import querystring from 'node:querystring';
 
-interface IScryfallCardInformation {
+import { MtgFormat } from './types/mtg-formats.js';
+import { MtgLegality } from './types/mtg-legalities.js';
+
+export interface IScryfallCardInformation {
     object: 'card';
     id: string;
     name: string;
-    legalities: {
-        commander: 'legal' | 'not_legal' | 'banned'
-    }
-    prices: {
-        usd: string | null;
-        usd_foil: string | null;
-    }
+    legalities: Record<MtgFormat, MtgLegality>
+    prices: PriceInformation
     type_line: string;
 }
 
@@ -25,10 +23,6 @@ export type PriceInformation = {
     usd_foil: string;
 };
 
-export type CardInformation = IScryfallCardInformation & {
-    prices: PriceInformation
-}
-
 interface IScryfallCardResponse {
     object: 'list';
     total_cards: number;
@@ -38,7 +32,7 @@ interface IScryfallCardResponse {
 
 const scryfallBaseUrl = 'https://api.scryfall.com';
 
-export const getCardInfo = async (cardName: string): Promise<CardInformation[]> => {
+export const getCardInfo = async (cardName: string): Promise<IScryfallCardInformation[]> => {
     const queryParams = querystring.stringify({
         q: `!"${cardName.toLowerCase()}"`,
         order: 'usd',
@@ -59,7 +53,7 @@ export const getCardInfo = async (cardName: string): Promise<CardInformation[]> 
 
     const parsedResponse = await response.json() as IScryfallCardResponse;
 
-    const cards = parsedResponse.data.filter((cardData) => cardData.prices.usd !== null || cardData.prices.usd_foil !== null) as CardInformation[];
+    const cards = parsedResponse.data.filter((cardData) => cardData.prices.usd !== null || cardData.prices.usd_foil !== null);
 
     return cards;
 };

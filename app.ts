@@ -8,8 +8,10 @@ import {
 import rawBody from 'fastify-raw-body';
 
 import * as commands from './commands.js';
-import { getCardInfo } from './scryfall.js';
-import { getCardPrice, validateDecklist } from './validation.js';
+import { getCardPrice } from './card-data-utilities.js';
+import { getDecklistInformation, parseDecklistInput } from './decklist-service.js';
+import { MtgFormat } from './types/mtg-formats.js';
+import { isCommanderBudgetExceeded, isCommanderValid, isDeckSizeMatchingFormat, isDecklistSingleton, isFormatLegal, isTotalBudgetExceeded } from './validation-rules.js';
 
 const checkEnvironmentVariableIsSet = (environmentVariableName: string) => {
     if (!process.env[environmentVariableName]) {
@@ -183,46 +185,26 @@ export const initializeServer = async () => {
 
             const [commanderInput, decklistInput] = request.body.data.components.map((actionRowComponent) => actionRowComponent.components[0]);
             const commander = commanderInput.value.trim();
-            const decklist = decklistInput.value
-                .split('\n')
-                .map((decklistEntry) => decklistEntry.trim())
-                .filter((decklistEntry) => decklistEntry.length);
+            const [decklist, decklistParsingErrors] = parseDecklistInput(decklistInput.value);
+            const [decklistData, decklistInfoErrors] = await getDecklistInformation({
+                commander,
+                decklist
+            });
 
-            const [commanderCardInfo] = await getCardInfo(commander);
+            const rulesErrors = [
+                isFormatLegal(MtgFormat.COMMANDER),
+                isTotalBudgetExceeded(25),
+                isCommanderValid(MtgFormat.COMMANDER),
+                isCommanderBudgetExceeded(5),
+                isDeckSizeMatchingFormat(MtgFormat.COMMANDER),
+                isDecklistSingleton
+            ].flatMap((ruleFunction) => ruleFunction(decklistData));
 
-            if (!commanderCardInfo) {
-                return {
-                    type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-                    data: {
-                        content: `The commander "${commander}" does not exist. Please check your spelling and resubmit.`
-                    }
-                }
-            }
-
-            const hasPrice = commanderCardInfo.prices.usd !== null || commanderCardInfo.prices.usd_foil !== null;
-
-            const price = getCardPrice(commanderCardInfo.prices);
-            const validationErrors: string[] = [];
-
-            if (!commanderCardInfo.type_line.toLowerCase().includes('legendary') || !commanderCardInfo.type_line.toLowerCase().includes('creature')) {
-                validationErrors.push(`Your commander "${commander}" is not a valid commander because it is not a legendary creature. Please select a different commander and resubmit.`);
-            }
-
-            if (commanderCardInfo.legalities.commander === 'banned') {
-                validationErrors.push(`Your commander "${commander}" is a banned card. Please select a different commander and resubmit.`);
-            }
-
-            if (!hasPrice || isNaN(price)) {
-                validationErrors.push(`Your commander "${commander}" does not have pricing information. Please verify this is the correct card and resubmit.`);
-            }
-
-            if (price > 5) {
-                validationErrors.push(`Your commander "${commander}" has a value of **$${price.toFixed(2)}**, exceeding the budget of **$5.00**. Please select a different commander and resubmit.`);
-            }
-
-            const decklistValidationInformation = await validateDecklist(decklist, price);
-
-            decklistValidationInformation.validationErrors.forEach((validationError) => validationErrors.push(validationError));
+            const validationErrors = [
+                ...decklistParsingErrors,
+                ...decklistInfoErrors,
+                ...rulesErrors
+            ];
 
             const updateUrl = `${baseUrl}/webhooks/${APP_ID}/${interactionToken}`;
 
@@ -237,16 +219,21 @@ export const initializeServer = async () => {
                     body: JSON.stringify(errorsBody)
                 });
             } else {
+                const commanderPrice = decklistData.commander ? getCardPrice(decklistData.commander.prices) : 0;
+                const totalPrice = decklistData.decklist
+                    .map((cardData) => getCardPrice(cardData.prices))
+                    .reduce((total, cardPrice) => total + cardPrice, 0);
+
                 const deckInfo = [
                     'Commander:',
                     '```',
-                    `${commander}: $${price.toFixed(2)}`,
+                    `${commander}: $${commanderPrice.toFixed(2)}`,
                     '```',
                     'Deck:',
                     '```',
-                    ...decklistValidationInformation.decklistData.map((decklistEntryInfo) => `${decklistEntryInfo.quantity} ${decklistEntryInfo.name}${decklistEntryInfo.scryfallData.type_line.toLowerCase().includes('basic') ? '' : `: $${getCardPrice(decklistEntryInfo.scryfallData.prices).toFixed(2)}`}`),
+                    ...decklistData.decklist.map((decklistEntryInfo) => `${decklistEntryInfo.quantity} ${decklistEntryInfo.name}${decklistEntryInfo.type_line.toLowerCase().includes('basic') ? '' : `: $${getCardPrice(decklistEntryInfo.prices).toFixed(2)}`}`),
                     '```',
-                    `Total cost: \`$${decklistValidationInformation.totalValue.toFixed(2)}\``
+                    `Total cost: \`$${totalPrice.toFixed(2)}\``
                 ];
 
                 const summaryBody = {
@@ -276,9 +263,17 @@ export const initializeServer = async () => {
         guildid: string;
     }
 
-    server.get('/update', async (request, reply) => {
-        //@ts-ignore
+    server.get<{
+        Querystring: IUpdateQueryParameters
+    }>('/update', async (request, reply) => {
         const guildId = request.query.guildid;
+
+        if (!guildId) {
+            return reply.status(400).send({
+                error: 'Please specify a guildId.'
+            });
+        }
+
         const url = `${baseUrl}/applications/${APP_ID}/guilds/${guildId}/commands`;
 
         console.log('the id', guildId);
