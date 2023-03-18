@@ -1,0 +1,35 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  SAM template for Servo
+  
+Globals:
+  Function:
+    Timeout: 3
+
+Resources:
+  ServoBot:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Events:
+        HttpApi:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: any
+    Metadata:
+      DockerTag: nodejs18.x
+      DockerContext: .
+      Dockerfile: Dockerfile
+
+Outputs:
+  ServoApi:
+    Description: "API Gateway endpoint URL for Prod stage for Servo function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/"
+  ServoFunction:
+    Description: "Servo Lambda Function ARN"
+    Value: !GetAtt ServoBot.Arn
+  ServoFunctionIamRole:
+    Description: "Implicit IAM Role created for Servo function"
+    Value: !GetAtt ServoBotRole.Arn

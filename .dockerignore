@@ -1,0 +1,8 @@
+.aws-sam
+dist
+node_modules
+.env
+.gitignore
+README.md
+samconfig.toml
+template.yaml

@@ -14,3 +14,9 @@ This is a Discord bot that can be used to validate that a MTG commander deck fol
 
 **npm run start**
 - Run the compiled application
+
+## Deployment
+
+Deployments are made using SAM from AWS. Make sure to have both the AWS and SAM CLIs installed and configured with access tokens.
+
+To deploy first, run `sam build` to build the image that will get deployed. Afterwards, run `sam deploy` to deploy the new image to AWS.

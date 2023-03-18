@@ -1,0 +1,10 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "servo-app"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-s136ntx0re03"
+s3_prefix = "servo-app"
+region = "us-east-1"
+capabilities = "CAPABILITY_IAM"
+image_repositories = ["ServoBot=468286031486.dkr.ecr.us-east-1.amazonaws.com/servoapp98b86181/servobot4bc0c917repo"]

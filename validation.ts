@@ -1,4 +1,4 @@
-import { CardInformation, PriceInformation, getCardInfo } from "./scryfall";
+import { CardInformation, PriceInformation, getCardInfo } from "./scryfall.js";
 
 const delay = (delayLength: number = 1000): Promise<void> => new Promise((resolve) => setTimeout(resolve, delayLength));
 
