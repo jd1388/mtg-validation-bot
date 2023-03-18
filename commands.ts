@@ -2,14 +2,8 @@ enum ApplicationCommandType {
     CHAT_INPUT = 1
 }
 
-export const test = {
-    name: 'test',
-    description: 'Basic guild command',
-    type: ApplicationCommandType.CHAT_INPUT
-};
-
 export const validate = {
-    name: 'validate',
-    description: 'Validate a MTG deck list',
+    name: 'servo-validate',
+    description: 'Validate your Magic the Gathering deck list against a set of rules.',
     type: ApplicationCommandType.CHAT_INPUT
 }

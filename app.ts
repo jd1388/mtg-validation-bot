@@ -20,13 +20,11 @@ const checkEnvironmentVariableIsSet = (environmentVariableName: string) => {
 
 [
     'APP_ID',
-    'GUILD_ID',
     'DISCORD_BOT_TOKEN',
     'APP_PUBLIC_KEY'
 ].forEach(checkEnvironmentVariableIsSet);
 
 const APP_ID = process.env.APP_ID as string;
-const GUILD_ID = process.env.GUILD_ID as string;
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN as string;
 const APP_PUBLIC_KEY = process.env.APP_PUBLIC_KEY as string;
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 8080;
@@ -99,16 +97,7 @@ export const initializeServer = async () => {
         if (type === InteractionType.APPLICATION_COMMAND) {
             const { name } = data;
 
-            if (name === 'test') {
-                return reply.status(200).send({
-                    type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-                    data: {
-                        content: 'Hello, I\'m a bot!'
-                    }
-                })
-            }
-
-            if (name === 'validate') {
+            if (name === 'servo-validate') {
                 const {
                     id: interactionId,
                     token: interactionToken
@@ -283,24 +272,38 @@ export const initializeServer = async () => {
         });
     });
 
-    server.get('/update', async (_request, reply) => {
-        const url = `${baseUrl}/applications/${APP_ID}/guilds/${GUILD_ID}/commands`;
+    interface IUpdateQueryParameters {
+        guildid: string;
+    }
+
+    server.get('/update', async (request, reply) => {
+        //@ts-ignore
+        const guildId = request.query.guildid;
+        const url = `${baseUrl}/applications/${APP_ID}/guilds/${guildId}/commands`;
+
+        console.log('the id', guildId);
 
         await Promise.all(Object.values(commands).map(async (command) => {
-            const response = await fetch(url, {
+            const options = {
                 headers: {
                     Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
                     'Content-Type': 'application/json charset=UTF-8',
-                    'User-Agent': 'DiscordBot (https://jaredgriffin.com, 0.1.0)'
+                    'User-Agent': 'DiscordBot (https://jaredgriffin.com, 0.2.0)'
                 },
                 method: 'POST',
                 body: JSON.stringify(command)
-            });
+            };
+
+            console.log('options', options);
+            console.log('url', url);
+
+            const response = await fetch(url, options);
         
-            const parsedResponse = response.json();
+            const parsedResponse = await response.json();
         
             if (!response.ok) {
                 console.log(`BAD RESPONSE: ${response.status}`);
+                console.log('response', JSON.stringify(parsedResponse));
         
                 throw new Error(JSON.stringify(parsedResponse));
             }
