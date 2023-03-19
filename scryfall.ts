@@ -10,6 +10,7 @@ export interface IScryfallCardInformation {
     legalities: Record<MtgFormat, MtgLegality>
     prices: PriceInformation
     type_line: string;
+    scryfall_uri: string;
 }
 
 export type PriceInformation = {

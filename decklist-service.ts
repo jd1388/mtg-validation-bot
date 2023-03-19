@@ -11,12 +11,12 @@ interface IDecklistEntryData {
     decklist: ICardEntry[];
 }
 
-interface ICardData extends IScryfallCardInformation {
+export interface ICardData extends IScryfallCardInformation {
     quantity: number;
 }
 
 export interface IDecklistData {
-    commander: IScryfallCardInformation | null;
+    commander: ICardData | null;
     decklist: ICardData[];
 }
 
@@ -83,7 +83,10 @@ export const getDecklistInformation = async (decklistEntryData: IDecklistEntryDa
     const filteredDecklistCardInfo = decklistCardInfo.filter((cardData): cardData is ICardData => cardData !== null);
     
     const decklistData = {
-        commander: commanderCardInfo ? commanderCardInfo : null,
+        commander: commanderCardInfo ? {
+            ...commanderCardInfo,
+            quantity: 1
+        } : null,
         decklist: filteredDecklistCardInfo
     };
 

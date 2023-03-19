@@ -9,9 +9,10 @@ import rawBody from 'fastify-raw-body';
 
 import * as commands from './commands.js';
 import { getCardPrice } from './card-data-utilities.js';
-import { getDecklistInformation, parseDecklistInput } from './decklist-service.js';
+import { ICardData, getDecklistInformation, parseDecklistInput } from './decklist-service.js';
 import { MtgFormat } from './types/mtg-formats.js';
 import { isCommanderBudgetExceeded, isCommanderValid, isDeckSizeMatchingFormat, isDecklistSingleton, isFormatLegal, isTotalBudgetExceeded } from './validation-rules.js';
+import { createMultipartFormDataEntry, createReportLine, stringToBlob } from './message-utilities.js';
 
 const checkEnvironmentVariableIsSet = (environmentVariableName: string) => {
     if (!process.env[environmentVariableName]) {
@@ -219,34 +220,38 @@ export const initializeServer = async () => {
                     body: JSON.stringify(errorsBody)
                 });
             } else {
-                const commanderPrice = decklistData.commander ? getCardPrice(decklistData.commander.prices) : 0;
-                const totalPrice = decklistData.decklist
-                    .map((cardData) => getCardPrice(cardData.prices))
-                    .reduce((total, cardPrice) => total + cardPrice, 0);
+                const validationSuccessMessage = {
+                    content: ':white_check_mark:  **VALIDATION PASSED**  :white_check_mark:\n\nSee the attached CSV file for detailed information on your decklist.',
+                    attachments: [{
+                        id: 0,
+                        filename: 'decklist-report.csv'
+                    }]
+                };
+                const quantityOfCardsInDecklist = decklistData.decklist.reduce((quantity, cardData) => quantity + cardData.quantity, 1);
+                const valueOfDecklist = getCardPrice((decklistData.commander as ICardData).prices) + decklistData.decklist.reduce((decklistTotalCost, cardData) => decklistTotalCost + getCardPrice(cardData.prices), 0);
+                const decklistReportString = [
+                    'Quantity,Name,Value,Scryfall Link',
+                    'Commander',
+                    createReportLine(decklistData.commander as ICardData),
+                    'Remaining cards in decklist',
+                    ...decklistData.decklist.map(createReportLine),
+                    'Totals',
+                    `${quantityOfCardsInDecklist},,$${valueOfDecklist}`
+                ].join('\n');
 
-                const deckInfo = [
-                    'Commander:',
-                    '```',
-                    `${commander}: $${commanderPrice.toFixed(2)}`,
-                    '```',
-                    'Deck:',
-                    '```',
-                    ...decklistData.decklist.map((decklistEntryInfo) => `${decklistEntryInfo.quantity} ${decklistEntryInfo.name}${decklistEntryInfo.type_line.toLowerCase().includes('basic') ? '' : `: $${getCardPrice(decklistEntryInfo.prices).toFixed(2)}`}`),
-                    '```',
-                    `Total cost: \`$${totalPrice.toFixed(2)}\``
-                ];
+                const successFormData = new FormData();
 
-                const summaryBody = {
-                    content: `:white_check_mark:  **VALIDATION PASSED**  :white_check_mark:\n\n${deckInfo.map((deckInfoMessage) => `${deckInfoMessage}`).join('\n')}`
-                }
+                successFormData.append('payload_json', JSON.stringify(validationSuccessMessage));
+                successFormData.append('files[0]', stringToBlob(decklistReportString, 'text/csv'), 'decklist-report.csv');
 
-                const summaryResponse = await fetch(updateUrl, {
-                    headers: discordHeaders,
+                await fetch(updateUrl, {
+                    headers: {
+                        Authorization: discordHeaders.Authorization,
+                        'User-Agent': discordHeaders['User-Agent']
+                    },
                     method: 'POST',
-                    body: JSON.stringify(summaryBody)
+                    body: successFormData
                 });
-
-                await summaryResponse.json();
             }
 
             return reply.status(200);
