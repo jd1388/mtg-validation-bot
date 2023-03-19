@@ -80,19 +80,17 @@ export const isCommanderBudgetExceeded = (budget: number) => (decklistData: IDec
     return [];
 };
 
-export const isDeckSizeMatchingFormat = (format: MtgFormat) => (decklistData: IDecklistData): string[] => {
+export const isDecklistAtRequiredSize = (requiredSize: number) => (decklistData: IDecklistData): string[] => {
     const decklistSize = decklistData.decklist
         .map((cardData) => cardData.quantity)
         .reduce((totalCards, cardQuantity) => totalCards + cardQuantity, 0)
     
-    if (format === MtgFormat.COMMANDER) {
-        const COMMANDER_DECKSIZE = 100;
-
-        if (decklistData.commander) {
-            if (decklistSize + 1 !== COMMANDER_DECKSIZE) {
-                return [`Your decklist contains ${decklistSize + 1} cards instead of 100. Please modify your decklist to meet this requirement and resubmit.`]
-            }
+    if (decklistData.commander) {
+        if (decklistSize + 1 !== requiredSize) {
+            return [`Your decklist contains ${decklistSize + 1} cards instead of ${requiredSize}. Please modify your decklist to meet this requirement and resubmit.`]
         }
+    } else if (decklistSize !== requiredSize) {
+        return [`Your decklist contains ${decklistSize} cards instead of ${requiredSize}. Please modify your decklist to meet this requirement and resubmit.`]
     }
 
     return [];

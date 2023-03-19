@@ -1,5 +1,6 @@
 import { IDecklistData } from "../decklist-service.js";
-import { isCommanderBudgetExceeded, isCommanderValid, isDeckSizeMatchingFormat, isDecklistSingleton, isFormatLegal, isInCommanderColorIdentity, isTotalBudgetExceeded } from "../validation-rules";
+import { isCommanderBudgetExceeded, isCommanderValid, isDecklistAtRequiredSize, isDecklistSingleton, isFormatLegal, isInCommanderColorIdentity, isTotalBudgetExceeded } from "../validation-rules.js";
+import { RuleConfiguration } from "./base-formats.js";
 import { IFormatConfiguration } from "./custom-formats.js";
 
 type RuleFunction = (decklistData: IDecklistData) => string[];
@@ -10,18 +11,47 @@ interface IFormat {
     rules: RuleFunction[]
 }
 
+const mergeBaseAndOverrideRules = (overrideRules: RuleConfiguration[], baseRules?: RuleConfiguration[]): RuleConfiguration[] => {
+    if (!baseRules) {
+        return overrideRules;
+    }
+
+    const rulesMap: Record<string, any> = {};
+
+    [...baseRules, ...overrideRules].forEach((rule) => {
+        if (typeof rule === 'string') {
+            rulesMap[rule] = null;
+        } else {
+            const [ruleName, ruleOptions] = rule;
+
+            rulesMap[ruleName] = ruleOptions;
+        }
+    });
+
+    const combinedRules: RuleConfiguration[] = Object.entries(rulesMap).map(([ruleName, ruleOptions]) => {
+        if (ruleOptions === null) {
+            return ruleName
+        }
+
+        return [ruleName, ruleOptions];
+    });
+
+    return combinedRules;
+};
+
 export const parseFormatConfiguration = (formatConfiguration: IFormatConfiguration): IFormat => {
     const rulesMap: Record<string, any> = {
         'format-legal': isFormatLegal,
         'has-legal-commander': isCommanderValid,
-        'format-decksize': isDeckSizeMatchingFormat,
+        'decksize': isDecklistAtRequiredSize,
         'singleton': isDecklistSingleton,
         'budget': isTotalBudgetExceeded,
         'commander-budget': isCommanderBudgetExceeded,
         'color-identity': isInCommanderColorIdentity
     };
 
-    const rules = [...(formatConfiguration.base || []), ...formatConfiguration.rules].map((ruleConfiguration) => {
+    const configurationRules = mergeBaseAndOverrideRules(formatConfiguration.rules, formatConfiguration.base);
+    const rules = configurationRules.map((ruleConfiguration) => {
         if (typeof ruleConfiguration === 'string') {
             if (!rulesMap[ruleConfiguration]) {
                 console.log(`WARNING: the rule "${ruleConfiguration}" does not exist and has been skipped`);

@@ -16,3 +16,13 @@ export const budgetCommander: IFormatConfiguration = {
         ['commander-budget', [5]]
     ]
 };
+
+export const budgetSmallCommander: IFormatConfiguration = {
+    name: 'budget-small-commander',
+    displayName: '$15 Budget Small Commander',
+    base: commander,
+    rules: [
+        ['budget', [15]],
+        ['decksize', [60]]
+    ]
+}

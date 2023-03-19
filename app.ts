@@ -325,9 +325,6 @@ export const initializeServer = async () => {
                 body: JSON.stringify(command)
             };
 
-            console.log('options', options);
-            console.log('url', url);
-
             const response = await fetch(url, options);
         
             const parsedResponse = await response.json();
