@@ -12,7 +12,9 @@ import { getCardPrice } from './card-data-utilities.js';
 import { ICardData, getDecklistInformation, parseDecklistInput } from './decklist-service.js';
 import { MtgFormat } from './types/mtg-formats.js';
 import { isCommanderBudgetExceeded, isCommanderValid, isDeckSizeMatchingFormat, isDecklistSingleton, isFormatLegal, isTotalBudgetExceeded } from './validation-rules.js';
-import { createMultipartFormDataEntry, createReportLine, stringToBlob } from './message-utilities.js';
+import { createReportLine, stringToBlob } from './message-utilities.js';
+import { parseFormatConfiguration } from './formats/format-parser.js';
+import { budgetCommander } from './formats/custom-formats.js';
 
 const checkEnvironmentVariableIsSet = (environmentVariableName: string) => {
     if (!process.env[environmentVariableName]) {
@@ -192,14 +194,9 @@ export const initializeServer = async () => {
                 decklist
             });
 
-            const rulesErrors = [
-                isFormatLegal(MtgFormat.COMMANDER),
-                isTotalBudgetExceeded(25),
-                isCommanderValid(MtgFormat.COMMANDER),
-                isCommanderBudgetExceeded(5),
-                isDeckSizeMatchingFormat(MtgFormat.COMMANDER),
-                isDecklistSingleton
-            ].flatMap((ruleFunction) => ruleFunction(decklistData));
+            const rules = parseFormatConfiguration(budgetCommander).rules;
+
+            const rulesErrors = rules.flatMap((ruleFunction) => ruleFunction(decklistData));
 
             const validationErrors = [
                 ...decklistParsingErrors,

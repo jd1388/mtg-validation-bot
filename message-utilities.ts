@@ -12,27 +12,6 @@ export const createReportLine = (cardData: ICardData): string => {
     return rowCells.join(',');
 };
 
-interface ICreateMultipartFormDataEntryParameters {
-    name: string;
-    contentType: string;
-    extraOptions?: Record<string, string>;
-    content: string;
-}
-
-export const createMultipartFormDataEntry = ({
-    name,
-    contentType,
-    extraOptions,
-    content
-}: ICreateMultipartFormDataEntryParameters): string => {
-    const baseContentDisposition = `Content-Disposition: form-data; name="${name}"`;
-    const extraContentDispositionOptions = extraOptions ? Object.entries(extraOptions).map(([key, value]) => `${key}="${value}"`).join('; ') : null;
-    const contentDispositionLine = extraContentDispositionOptions ? [baseContentDisposition, extraContentDispositionOptions].join('; ') : baseContentDisposition;
-    const contentTypeLine = `Content-Type: ${contentType}`;
-
-    return `${contentDispositionLine}\n${contentTypeLine}\n\n${content}`;
-};
-
 export const stringToBlob = (stringToConvert: string, type: string): Blob => new Blob([stringToConvert], {
     type
 });
