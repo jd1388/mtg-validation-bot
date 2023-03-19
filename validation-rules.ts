@@ -103,3 +103,18 @@ export const isDecklistSingleton = (decklistData: IDecklistData): string[] => {
 
     return nonSingletonCards.map((cardData) => `You have ${cardData.quantity} copies of "${cardData.name}" when only one is allowed. Please modify your decklist to only contain 1 copy of this card and resubmit.`);
 };
+
+export const isInCommanderColorIdentity = (decklistData: IDecklistData): string[] => {
+    if (!decklistData.commander) {
+        return [];
+    }
+
+    return decklistData.decklist
+        .filter((cardData) => {
+            const cardColors = cardData.color_identity;
+            const cardColorsOutsideCommanderColorIdentity = cardColors.filter((color) => !decklistData.commander?.color_identity.includes(color));
+
+            return cardColorsOutsideCommanderColorIdentity.length > 0;
+        })
+        .map((cardData) => `The card "${cardData.name}" does not match your commander's color identity. Please remove this card and resubmit.`);
+};

@@ -7,4 +7,5 @@ export const commander: RuleConfiguration[] = [
     ['has-legal-commander', [MtgFormat.COMMANDER]],
     ['format-decksize', [MtgFormat.COMMANDER]],
     'singleton',
+    'color-identity'
 ];

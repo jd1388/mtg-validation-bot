@@ -1,5 +1,5 @@
 import { IDecklistData } from "../decklist-service.js";
-import { isCommanderBudgetExceeded, isCommanderValid, isDeckSizeMatchingFormat, isDecklistSingleton, isFormatLegal, isTotalBudgetExceeded } from "../validation-rules";
+import { isCommanderBudgetExceeded, isCommanderValid, isDeckSizeMatchingFormat, isDecklistSingleton, isFormatLegal, isInCommanderColorIdentity, isTotalBudgetExceeded } from "../validation-rules";
 import { IFormatConfiguration } from "./custom-formats.js";
 
 type RuleFunction = (decklistData: IDecklistData) => string[];
@@ -17,7 +17,8 @@ export const parseFormatConfiguration = (formatConfiguration: IFormatConfigurati
         'format-decksize': isDeckSizeMatchingFormat,
         'singleton': isDecklistSingleton,
         'budget': isTotalBudgetExceeded,
-        'commander-budget': isCommanderBudgetExceeded
+        'commander-budget': isCommanderBudgetExceeded,
+        'color-identity': isInCommanderColorIdentity
     };
 
     const rules = [...(formatConfiguration.base || []), ...formatConfiguration.rules].map((ruleConfiguration) => {

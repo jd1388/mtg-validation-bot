@@ -2,6 +2,7 @@ import querystring from 'node:querystring';
 
 import { MtgFormat } from './types/mtg-formats.js';
 import { MtgLegality } from './types/mtg-legalities.js';
+import { MtgManaColor } from './types/mtg-mana-colors.js';
 
 export interface IScryfallCardInformation {
     object: 'card';
@@ -11,6 +12,7 @@ export interface IScryfallCardInformation {
     prices: PriceInformation
     type_line: string;
     scryfall_uri: string;
+    color_identity: MtgManaColor[];
 }
 
 export type PriceInformation = {
