@@ -267,7 +267,7 @@ export const initializeServer = async () => {
                     'Remaining cards in decklist',
                     ...decklistData.decklist.map(createReportLine),
                     'Totals',
-                    `${quantityOfCardsInDecklist},,$${valueOfDecklist}`
+                    `${quantityOfCardsInDecklist},,$${valueOfDecklist.toFixed(2)}`
                 ].join('\n');
 
                 const successFormData = new FormData();

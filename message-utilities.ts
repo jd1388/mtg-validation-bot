@@ -1,11 +1,11 @@
-import { getCardPrice } from "./card-data-utilities.js";
+import { getCardPrice, isBasicLand } from "./card-data-utilities.js";
 import { ICardData } from "./decklist-service.js";
 
 export const createReportLine = (cardData: ICardData): string => {
     const rowCells = [
         cardData.quantity,
         `"${cardData.name}"`,
-        `$${getCardPrice(cardData.prices).toFixed(2)}`,
+        `${isBasicLand(cardData) ? '' : `$${getCardPrice(cardData.prices).toFixed(2)}`}`,
         cardData.scryfall_uri
     ];
 

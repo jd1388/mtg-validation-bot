@@ -1,3 +1,4 @@
+import { ICardData } from "./decklist-service.js";
 import { PriceInformation } from "./scryfall.js";
 
 export const getCardPrice = (price: PriceInformation): number => {
@@ -18,3 +19,5 @@ export const getCardPrice = (price: PriceInformation): number => {
 
     return NaN;
 }
+
+export const isBasicLand = (cardData: ICardData): boolean => cardData.type_line.toLowerCase().includes('basic');
