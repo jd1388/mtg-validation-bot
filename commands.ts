@@ -1,6 +1,6 @@
 import * as rulesConfigurations from './formats/custom-formats.js';
 
-export enum CommandOptionType {
+enum CommandOptionType {
     STRING = 3
 }
 
