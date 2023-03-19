@@ -34,7 +34,7 @@ export const isTotalBudgetExceeded = (budget: number) => (decklistData: IDecklis
                 return 0;
             }
 
-            return cardPrice;
+            return cardPrice * decklistEntry.quantity;
         })
         .filter((cardPrice) => !isNaN(cardPrice))
         .reduce((totalCost, cardPrice) => totalCost + cardPrice, 0);

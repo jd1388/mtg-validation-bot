@@ -10,11 +10,9 @@ import rawBody from 'fastify-raw-body';
 import * as commands from './commands.js';
 import { getCardPrice } from './card-data-utilities.js';
 import { ICardData, getDecklistInformation, parseDecklistInput } from './decklist-service.js';
-import { MtgFormat } from './types/mtg-formats.js';
-import { isCommanderBudgetExceeded, isCommanderValid, isDeckSizeMatchingFormat, isDecklistSingleton, isFormatLegal, isTotalBudgetExceeded } from './validation-rules.js';
 import { createReportLine, stringToBlob } from './message-utilities.js';
 import { parseFormatConfiguration } from './formats/format-parser.js';
-import { budgetCommander } from './formats/custom-formats.js';
+import * as customFormats from './formats/custom-formats.js';
 
 const checkEnvironmentVariableIsSet = (environmentVariableName: string) => {
     if (!process.env[environmentVariableName]) {
@@ -80,6 +78,11 @@ export const initializeServer = async () => {
                     type: number;
                     value: string;
                 }[]
+            }[];
+            options: {
+                name: string;
+                type: number;
+                value: string;
             }[]
         }
         id: string;
@@ -107,6 +110,7 @@ export const initializeServer = async () => {
                     id: interactionId,
                     token: interactionToken
                 } = request.body;
+                const selectedFormat = data.options[0].value
 
                 const url = `${baseUrl}/interactions/${interactionId}/${interactionToken}/callback`;
                 const body = {
@@ -115,6 +119,19 @@ export const initializeServer = async () => {
                         custom_id: 'validate-modal',
                         title: 'Validate your commander decklist!',
                         components: [
+                            {
+                                type: 1,
+                                components: [
+                                    {
+                                        type: 4,
+                                        custom_id: 'validate-format',
+                                        style: 1,
+                                        label: 'Format to validate against (Leave alone)',
+                                        required: true,
+                                        value: selectedFormat
+                                    }
+                                ]
+                            },
                             {
                                 type: 1,
                                 components: [
@@ -186,15 +203,33 @@ export const initializeServer = async () => {
                 body: JSON.stringify(body)
             });
 
-            const [commanderInput, decklistInput] = request.body.data.components.map((actionRowComponent) => actionRowComponent.components[0]);
+            const [formatInput, commanderInput, decklistInput] = request.body.data.components.map((actionRowComponent) => actionRowComponent.components[0]);
             const commander = commanderInput.value.trim();
             const [decklist, decklistParsingErrors] = parseDecklistInput(decklistInput.value);
             const [decklistData, decklistInfoErrors] = await getDecklistInformation({
                 commander,
                 decklist
             });
+            const format = formatInput.value.trim();
+            const formatConfiguration = Object.values(customFormats).find((customFormat) => customFormat.name === format);
 
-            const rules = parseFormatConfiguration(budgetCommander).rules;
+            const updateUrl = `${baseUrl}/webhooks/${APP_ID}/${interactionToken}`;
+
+            if (!formatConfiguration) {
+                const errorsBody = {
+                    content: `:x:  **INVALID RULES FORMAT**  :x:\nThe rules format you chose does not exist. Please try again and select one of the options provided.`
+                };
+
+                await fetch(updateUrl, {
+                    headers: discordHeaders,
+                    method: 'POST',
+                    body: JSON.stringify(errorsBody)
+                });
+
+                return reply.status(200);
+            }
+
+            const rules = parseFormatConfiguration(formatConfiguration).rules;
 
             const rulesErrors = rules.flatMap((ruleFunction) => ruleFunction(decklistData));
 
@@ -203,8 +238,6 @@ export const initializeServer = async () => {
                 ...decklistInfoErrors,
                 ...rulesErrors
             ];
-
-            const updateUrl = `${baseUrl}/webhooks/${APP_ID}/${interactionToken}`;
 
             if (validationErrors.length) {
                 const errorsBody = {
@@ -225,8 +258,9 @@ export const initializeServer = async () => {
                     }]
                 };
                 const quantityOfCardsInDecklist = decklistData.decklist.reduce((quantity, cardData) => quantity + cardData.quantity, 1);
-                const valueOfDecklist = getCardPrice((decklistData.commander as ICardData).prices) + decklistData.decklist.reduce((decklistTotalCost, cardData) => decklistTotalCost + getCardPrice(cardData.prices), 0);
+                const valueOfDecklist = getCardPrice((decklistData.commander as ICardData).prices) + decklistData.decklist.reduce((decklistTotalCost, cardData) => cardData.type_line.toLowerCase().includes('basic') ? decklistTotalCost : decklistTotalCost + (cardData.quantity * getCardPrice(cardData.prices)), 0);
                 const decklistReportString = [
+                    `Format:,"${formatConfiguration.displayName}"`,
                     'Quantity,Name,Value,Scryfall Link',
                     'Commander',
                     createReportLine(decklistData.commander as ICardData),
