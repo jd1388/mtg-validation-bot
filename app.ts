@@ -151,7 +151,7 @@ export const initializeServer = async () => {
                                         type: 4,
                                         custom_id: 'validate-decklist',
                                         style: 2,
-                                        label: 'Remaining 99 in your decklist'
+                                        label: 'Remaining decklist'
                                     }
                                 ]
                             }
