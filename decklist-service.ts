@@ -1,5 +1,4 @@
 import { IScryfallCardInformation, getCardInfo } from "./scryfall.js";
-import { delay } from "./utilities.js";
 
 interface ICardEntry {
     quantity: number;
@@ -64,8 +63,6 @@ export const getDecklistInformation = async (decklistEntryData: IDecklistEntryDa
 
     const decklistCardInfo = await Promise.all(decklistEntryData.decklist
         .map(async (decklistEntry) => {
-            await delay(50);
-
             const [entryCardData] = await getCardInfo(decklistEntry.name);
 
             if (!entryCardData) {

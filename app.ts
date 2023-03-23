@@ -10,7 +10,7 @@ import rawBody from 'fastify-raw-body';
 import * as commands from './commands.js';
 import { getCardPrice } from './card-data-utilities.js';
 import { ICardData, getDecklistInformation, parseDecklistInput } from './decklist-service.js';
-import { createReportLine, stringToBlob } from './message-utilities.js';
+import { createErrorMessages, createReportLine, stringToBlob } from './message-utilities.js';
 import { parseFormatConfiguration } from './formats/format-parser.js';
 import * as customFormats from './formats/custom-formats.js';
 
@@ -210,6 +210,7 @@ export const initializeServer = async () => {
                 commander,
                 decklist
             });
+
             const format = formatInput.value.trim();
             const formatConfiguration = Object.values(customFormats).find((customFormat) => customFormat.name === format);
 
@@ -240,8 +241,10 @@ export const initializeServer = async () => {
             ];
 
             if (validationErrors.length) {
+                const [firstErrorMessage] = createErrorMessages(validationErrors);
+                const firstErrorMessagePrefix = ':x:  **VALIDATION FAILED**  :x:\n*See the errors below:*\n\n';
                 const errorsBody = {
-                    content: `:x:  **VALIDATION FAILED**  :x:\n*See the errors below:*\n\n${validationErrors.map((validationError) => `- ${validationError}`).join('\n')}`
+                    content: `${firstErrorMessagePrefix}${firstErrorMessage}`
                 };
 
                 await fetch(updateUrl, {
@@ -311,8 +314,6 @@ export const initializeServer = async () => {
         }
 
         const url = `${baseUrl}/applications/${APP_ID}/guilds/${guildId}/commands`;
-
-        console.log('the id', guildId);
 
         await Promise.all(Object.values(commands).map(async (command) => {
             const options = {

@@ -16,14 +16,9 @@ export interface IScryfallCardInformation {
 }
 
 export type PriceInformation = {
-    usd: string;
-    usd_foil: null;
-} | {
-    usd: null;
-    usd_foil: string;
-} | {
-    usd: string;
-    usd_foil: string;
+    usd: string | null;
+    usd_foil: string | null;
+    usd_etched: string | null;
 };
 
 interface IScryfallCardResponse {
@@ -43,6 +38,10 @@ export const getCardInfo = async (cardName: string): Promise<IScryfallCardInform
     });
     const url = `${scryfallBaseUrl}/cards/search?${queryParams}`;
 
+    if (cardName.includes('Chishiro')) {
+        console.log('query params', queryParams);
+    }
+
     const response = await fetch(url);
     
     if (!response.ok) {
@@ -56,7 +55,12 @@ export const getCardInfo = async (cardName: string): Promise<IScryfallCardInform
 
     const parsedResponse = await response.json() as IScryfallCardResponse;
 
-    const cards = parsedResponse.data.filter((cardData) => cardData.prices.usd !== null || cardData.prices.usd_foil !== null);
+    if (cardName.includes('Chishiro')) {
+        console.log('response', parsedResponse);
+        console.log('prices', parsedResponse.data[0].prices);
+    }
+
+    const cards = parsedResponse.data.filter((cardData) => cardData.prices.usd !== null || cardData.prices.usd_foil !== null || cardData.prices.usd_etched !== null);
 
     return cards;
 };
