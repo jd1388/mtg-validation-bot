@@ -1,5 +1,5 @@
 import { getCardPrice, isBasicLand } from "./card-data-utilities.js";
-import { ICardData } from "./decklist-service.js";
+import { ICardData } from "../services/decklist-service.js";
 
 export const createReportLine = (cardData: ICardData): string => {
     const rowCells = [

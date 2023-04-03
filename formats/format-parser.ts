@@ -1,5 +1,5 @@
-import { IDecklistData } from "../decklist-service.js";
-import { isCommanderBudgetExceeded, isCommanderValid, isDecklistAtRequiredSize, isDecklistSingleton, isFormatLegal, isInCommanderColorIdentity, isTotalBudgetExceeded } from "../validation-rules.js";
+import { IDecklistData } from "../services/decklist-service.js";
+import { isCommanderBudgetExceeded, isCommanderValid, isDecklistAtRequiredSize, isDecklistSingleton, isFormatLegal, isInCommanderColorIdentity, isTotalBudgetExceeded } from "../rules/validation-rules.js";
 import { RuleConfiguration } from "./base-formats.js";
 import { IFormatConfiguration } from "./custom-formats.js";
 

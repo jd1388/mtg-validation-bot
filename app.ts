@@ -8,9 +8,9 @@ import {
 import rawBody from 'fastify-raw-body';
 
 import * as commands from './commands.js';
-import { getCardPrice } from './card-data-utilities.js';
-import { ICardData, getDecklistInformation, parseDecklistInput } from './decklist-service.js';
-import { createErrorMessages, createReportLine, stringToBlob } from './message-utilities.js';
+import { getCardPrice } from './utils/card-data-utilities.js';
+import { ICardData, getDecklistInformation, parseDecklistInput } from './services/decklist-service.js';
+import { createErrorMessages, createReportLine, stringToBlob } from './utils/message-utilities.js';
 import { parseFormatConfiguration } from './formats/format-parser.js';
 import * as customFormats from './formats/custom-formats.js';
 

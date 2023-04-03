@@ -1,7 +1,7 @@
-import { IDecklistData } from "./decklist-service.js";
-import { MtgFormat } from "./types/mtg-formats.js";
-import { MtgLegality } from "./types/mtg-legalities.js";
-import { getCardPrice } from "./card-data-utilities.js";
+import { IDecklistData } from "../services/decklist-service.js";
+import { MtgFormat } from "../types/mtg-formats.js";
+import { MtgLegality } from "../types/mtg-legalities.js";
+import { getCardPrice } from "../utils/card-data-utilities.js";
 
 export const isFormatLegal = (format: MtgFormat) => (decklistData: IDecklistData): string[] => {
     const validationErrors: string[] = [];

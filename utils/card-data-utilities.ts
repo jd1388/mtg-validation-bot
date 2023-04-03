@@ -1,5 +1,5 @@
-import { ICardData } from "./decklist-service.js";
-import { PriceInformation } from "./scryfall.js";
+import { ICardData } from "../services/decklist-service.js";
+import { PriceInformation } from "../services/scryfall.js";
 
 export const getCardPrice = (price: PriceInformation): number => {
     return [

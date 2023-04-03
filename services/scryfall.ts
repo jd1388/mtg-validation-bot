@@ -1,8 +1,8 @@
 import querystring from 'node:querystring';
 
-import { MtgFormat } from './types/mtg-formats.js';
-import { MtgLegality } from './types/mtg-legalities.js';
-import { MtgManaColor } from './types/mtg-mana-colors.js';
+import { MtgFormat } from '../types/mtg-formats.js';
+import { MtgLegality } from '../types/mtg-legalities.js';
+import { MtgManaColor } from '../types/mtg-mana-colors.js';
 
 export interface IScryfallCardInformation {
     object: 'card';
@@ -38,10 +38,6 @@ export const getCardInfo = async (cardName: string): Promise<IScryfallCardInform
     });
     const url = `${scryfallBaseUrl}/cards/search?${queryParams}`;
 
-    if (cardName.includes('Chishiro')) {
-        console.log('query params', queryParams);
-    }
-
     const response = await fetch(url);
     
     if (!response.ok) {
@@ -54,11 +50,6 @@ export const getCardInfo = async (cardName: string): Promise<IScryfallCardInform
     }
 
     const parsedResponse = await response.json() as IScryfallCardResponse;
-
-    if (cardName.includes('Chishiro')) {
-        console.log('response', parsedResponse);
-        console.log('prices', parsedResponse.data[0].prices);
-    }
 
     const cards = parsedResponse.data.filter((cardData) => cardData.prices.usd !== null || cardData.prices.usd_foil !== null || cardData.prices.usd_etched !== null);
 
