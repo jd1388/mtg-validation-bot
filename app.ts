@@ -140,6 +140,7 @@ export const initializeServer = async () => {
                                         custom_id: 'validate-commander',
                                         style: 2,
                                         label: 'Commander(s)',
+                                        placeholder: 'Wilson, Refined Grizzly\nRaised by Giants',
                                         required: true
                                     },
                                 ]
@@ -151,7 +152,9 @@ export const initializeServer = async () => {
                                         type: 4,
                                         custom_id: 'validate-decklist',
                                         style: 2,
-                                        label: 'Remaining decklist'
+                                        label: 'Remaining decklist',
+                                        placeholder: '1 Sword of the Animist\n1 Arcane Signet\n30 Forest',
+                                        required: true
                                     }
                                 ]
                             }
