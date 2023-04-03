@@ -7,16 +7,6 @@ export interface IFormatConfiguration {
     displayName: string;
 }
 
-export const budgetCommander: IFormatConfiguration = {
-    name: 'budget-commander',
-    displayName: '$25 Budget Commander',
-    base: commander,
-    rules: [
-        ['budget', [25]],
-        ['commander-budget', [5]]
-    ]
-};
-
 export const budgetSmallCommander: IFormatConfiguration = {
     name: 'budget-small-commander',
     displayName: '$15 Budget Small Commander',
