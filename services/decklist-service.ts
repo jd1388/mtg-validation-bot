@@ -6,7 +6,7 @@ interface ICardEntry {
 }
 
 interface IDecklistEntryData {
-    commander: string;
+    commander: ICardEntry[];
     decklist: ICardEntry[];
 }
 
@@ -15,9 +15,18 @@ export interface ICardData extends IScryfallCardInformation {
 }
 
 export interface IDecklistData {
-    commander: ICardData | null;
+    commander: ICardData[];
     decklist: ICardData[];
 }
+
+export const parseCommanderInput = (rawCommanderInput: string): ICardEntry[] => rawCommanderInput
+    .split('\n')
+    .map((commanderEntry) => commanderEntry.trim())
+    .filter((commanderEntry) => commanderEntry.length)
+    .map((commanderEntry) => ({
+        quantity: 1,
+        name: commanderEntry
+    }));
 
 export const parseDecklistInput = (rawDecklistInput: string): [ICardEntry[], string[]] => {
     const validationErrors: string[] = [];
@@ -55,11 +64,25 @@ export const parseDecklistInput = (rawDecklistInput: string): [ICardEntry[], str
 
 export const getDecklistInformation = async (decklistEntryData: IDecklistEntryData): Promise<[IDecklistData, string[]]> => {
     const validationErrors: string[] = [];
-    const [commanderCardInfo] = await getCardInfo(decklistEntryData.commander);
 
-    if (!commanderCardInfo) {
-        validationErrors.push(`The commander "${decklistEntryData.commander}" does not exist. Please check your spelling and resubmit.`)
-    }
+    const commanderCardInfo = await Promise.all(decklistEntryData.commander
+        .map(async (commanderEntry) => {
+            const [entryCardData] = await getCardInfo(commanderEntry.name);
+
+            if (!entryCardData) {
+                validationErrors.push(`The commander "${commanderEntry.name}" does not exist. Please check your spelling and resubmit.`);
+
+                return null;
+            }
+
+            return {
+                ...entryCardData,
+                quantity: commanderEntry.quantity
+            } as ICardData;
+        })
+    );
+
+    const filteredCommanderCardInfo = commanderCardInfo.filter((cardData): cardData is ICardData => cardData !== null);
 
     const decklistCardInfo = await Promise.all(decklistEntryData.decklist
         .map(async (decklistEntry) => {
@@ -80,10 +103,7 @@ export const getDecklistInformation = async (decklistEntryData: IDecklistEntryDa
     const filteredDecklistCardInfo = decklistCardInfo.filter((cardData): cardData is ICardData => cardData !== null);
     
     const decklistData = {
-        commander: commanderCardInfo ? {
-            ...commanderCardInfo,
-            quantity: 1
-        } : null,
+        commander: filteredCommanderCardInfo,
         decklist: filteredDecklistCardInfo
     };
 

@@ -11,8 +11,10 @@ export interface IScryfallCardInformation {
     legalities: Record<MtgFormat, MtgLegality>
     prices: PriceInformation
     type_line: string;
+    oracle_text: string;
     scryfall_uri: string;
     color_identity: MtgManaColor[];
+    keywords: string[];
 }
 
 export type PriceInformation = {

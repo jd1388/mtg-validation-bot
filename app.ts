@@ -9,7 +9,7 @@ import rawBody from 'fastify-raw-body';
 
 import * as commands from './commands.js';
 import { getCardPrice } from './utils/card-data-utilities.js';
-import { ICardData, getDecklistInformation, parseDecklistInput } from './services/decklist-service.js';
+import { ICardData, getDecklistInformation, parseCommanderInput, parseDecklistInput } from './services/decklist-service.js';
 import { createErrorMessages, createReportLine, stringToBlob } from './utils/message-utilities.js';
 import { parseFormatConfiguration } from './formats/format-parser.js';
 import * as customFormats from './formats/custom-formats.js';
@@ -138,8 +138,8 @@ export const initializeServer = async () => {
                                     {
                                         type: 4,
                                         custom_id: 'validate-commander',
-                                        style: 1,
-                                        label: 'Commander',
+                                        style: 2,
+                                        label: 'Commander(s)',
                                         required: true
                                     },
                                 ]
@@ -204,7 +204,7 @@ export const initializeServer = async () => {
             });
 
             const [formatInput, commanderInput, decklistInput] = request.body.data.components.map((actionRowComponent) => actionRowComponent.components[0]);
-            const commander = commanderInput.value.trim();
+            const commander = parseCommanderInput(commanderInput.value);
             const [decklist, decklistParsingErrors] = parseDecklistInput(decklistInput.value);
             const [decklistData, decklistInfoErrors] = await getDecklistInformation({
                 commander,
@@ -261,12 +261,12 @@ export const initializeServer = async () => {
                     }]
                 };
                 const quantityOfCardsInDecklist = decklistData.decklist.reduce((quantity, cardData) => quantity + cardData.quantity, 1);
-                const valueOfDecklist = getCardPrice((decklistData.commander as ICardData).prices) + decklistData.decklist.reduce((decklistTotalCost, cardData) => cardData.type_line.toLowerCase().includes('basic') ? decklistTotalCost : decklistTotalCost + (cardData.quantity * getCardPrice(cardData.prices)), 0);
+                const valueOfDecklist = decklistData.commander.reduce((commanderTotalCost, cardData) => getCardPrice(cardData.prices) + commanderTotalCost, 0) + decklistData.decklist.reduce((decklistTotalCost, cardData) => cardData.type_line.toLowerCase().includes('basic') ? decklistTotalCost : decklistTotalCost + (cardData.quantity * getCardPrice(cardData.prices)), 0);
                 const decklistReportString = [
                     `Format:,"${formatConfiguration.displayName}"`,
                     'Quantity,Name,Value,Scryfall Link',
                     'Commander',
-                    createReportLine(decklistData.commander as ICardData),
+                    ...decklistData.commander.map(createReportLine),
                     'Remaining cards in decklist',
                     ...decklistData.decklist.map(createReportLine),
                     'Totals',
